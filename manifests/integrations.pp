@@ -6,7 +6,7 @@ class newrelic_infra::integrations (
   require ::newrelic_infra::agent
 
   # Setup agent package repo
-  case $::operatingsystem {
+  case $facts['os']['name'] {
     'Debian', 'Ubuntu', 'RedHat', 'CentOS','Amazon', 'OracleLinux': {
       ensure_packages($integrations)
     }

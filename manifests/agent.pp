@@ -124,7 +124,7 @@ class newrelic_infra::agent (
                 apt::source { 'newrelic_infra-agent':
                   ensure       => $package_repo_state,
                   location     => 'https://download.newrelic.com/infrastructure_agent/linux/apt',
-                  release      => $::lsbdistcodename,
+                  release      => $facts['os']['distro']['codename'],
                   repos        => 'main',
                   architecture => 'amd64',
                   key          => {
@@ -149,12 +149,12 @@ class newrelic_infra::agent (
               }
             }
             'RedHat', 'CentOS', 'Amazon', 'OracleLinux': {
-              if ($::operatingsystem == 'Amazon' and $::operatingsystemmajrelease == '2018'){
+              if ($facts['os']['name'] == 'Amazon' and $facts['os']['release']['major'] == '2018'){
                 $repo_releasever = '6'
-              } elsif ($::operatingsystem == 'Amazon' and $::operatingsystemmajrelease == '2'){
+              } elsif ($facts['os']['name'] == 'Amazon' and $facts['os']['release']['major'] == '2'){
                 $repo_releasever = '7'
               } else {
-                $repo_releasever = $::operatingsystemmajrelease
+                $repo_releasever = $facts['os']['release']['major']
               }
               if $manage_repo {
                 yumrepo { 'newrelic_infra-agent':
@@ -183,7 +183,7 @@ class newrelic_infra::agent (
               }
               -> exec { 'add_newrelic_repo':
                 creates => '/etc/zypp/repos.d/newrelic-infra.repo',
-                command => "/usr/bin/zypper addrepo --repo http://download.newrelic.com/infrastructure_agent/linux/zypp/sles/${::operatingsystemrelease}/x86_64/newrelic-infra.repo",
+                command => "/usr/bin/zypper addrepo --repo http://download.newrelic.com/infrastructure_agent/linux/zypp/sles/${facts['os']['release']['major']}/x86_64/newrelic-infra.repo",
                 path    => ['/usr/local/sbin', '/usr/local/bin', '/sbin', '/bin', '/usr/bin'],
               }
               # work around necessary because pacakge doesn't have Zypp provider in the puppet SLES version
@@ -289,7 +289,7 @@ class newrelic_infra::agent (
     }
   }
 
-  if $::operatingsystem != 'windows' {
+  if $facts['os']['name'] != 'windows' {
     # Setup agent config
     file { '/etc/newrelic-infra.yml':
       ensure  => 'present',
@@ -318,13 +318,13 @@ class newrelic_infra::agent (
   }
 
   # we use Upstart on CentOS 6 systems and derivatives, which is not the default
-  if (($::operatingsystem == 'CentOS' or $::operatingsystem == 'RedHat' or $::operatingsystem == 'OracleLinux')and $::operatingsystemmajrelease == '6')
-  or ($::operatingsystem == 'Amazon' and $::operatingsystemmajrelease == '2018') {
+  if (($facts['os']['name'] == 'CentOS' or $facts['os']['name'] == 'RedHat' or $facts['os']['name'] == 'OracleLinux')and $facts['os']['release']['major'] == '6')
+  or ($facts['os']['name'] == 'Amazon' and $facts['os']['release']['major'] == '2018') {
     service { 'newrelic-infra':
       ensure   => $service_state,
       provider => 'upstart',
     }
-  } elsif $::operatingsystem == 'SLES' and $::operatingsystemmajrelease == '12' {
+  } elsif $facts['os']['name'] == 'SLES' and $facts['os']['release']['major'] == '12' {
     # Setup agent service for systemd service manager
     service { 'newrelic-infra':
       ensure => $service_ensure,
@@ -332,7 +332,7 @@ class newrelic_infra::agent (
       stop   => 'systemctl stop newrelic-infra',
       status => 'systemctl status newrelic-infra',
     }
-  } elsif $::operatingsystem == 'SLES' and $::operatingsystemmajrelease == '11' {
+  } elsif $facts['os']['name'] == 'SLES' and $facts['os']['release']['major'] == '11' {
     # Setup agent service for sysv-init service manager
     service { 'newrelic-infra':
       ensure => $service_state,
